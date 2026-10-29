@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080d0a">
+<title>WAKH SPORT</title>
+<style>
+:root{--bg:#080d0a;--panel:#111a14;--line:#29392e;--green:#9cff75;--muted:#9baa9e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#f4f7f4;font:15px Arial,sans-serif}
+header{position:sticky;top:0;z-index:5;background:#0c130e;border-bottom:1px solid var(--line);padding:15px}
+.wrap{max-width:760px;margin:auto}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.logo{font-size:24px;font-weight:900;letter-spacing:1px}
+.logo span,.green{color:var(--green)}
+.tag{font-size:10px;color:var(--muted);margin-top:5px}
+.pill{border:1px solid #345039;border-radius:20px;padding:8px;color:var(--green);font-size:11px}
+nav{display:flex;gap:7px;overflow:auto;padding:12px 0 0}
+nav button{white-space:nowrap;flex:1}
+button{cursor:pointer;background:#1a281e;color:white;border:1px solid #354a39;padding:11px;border-radius:10px;font-weight:bold}
+button:focus,button.active{background:#25452b;border-color:var(--green)}
+.primary{background:var(--green);color:#091208;border:0}
+main{max-width:760px;margin:auto;padding:14px;padding-bottom:35px}
+.page{display:none;animation:fade .2s ease}
+.page.active{display:block}
+@keyframes fade{from{opacity:.5;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:17px;margin:12px 0}
+.hero{background:linear-gradient(135deg,#14251a,#0e1510 70%);padding:23px}
+h1{font-size:27px;margin:8px 0}
+h2{font-size:18px;margin:4px 0 14px}
+.muted,.small{color:var(--muted);line-height:1.5}
+.small{font-size:12px}
+.balance{font-size:27px;font-weight:900;color:var(--green);margin:10px 0}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:#0b110d;padding:13px;border-radius:11px}
+.stat b{display:block;font-size:19px;margin-top:7px}
+.teams{font-size:16px;font-weight:bold;line-height:1.8}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.picks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.pick{font-size:14px;line-height:1.6}
+.pick b{color:var(--green)}
+input{width:100%;background:#080e0a;border:1px solid #35483a;color:white;border-radius:10px;padding:13px;margin:8px 0 13px;font-size:16px}
+label{font-size:13px;color:var(--muted)}
+.full{width:100%}
+.badge{font-size:11px;color:var(--green);border:1px solid #345039;border-radius:20px;padding:5px 8px}
+.item{padding:12px 0;border-bottom:1px solid var(--line);line-height:1.6;overflow-wrap:anywhere}
+footer{text-align:center;color:#718174;font-size:12px;padding:22px}
+@media(min-width:600px){main{padding-top:22px}.hero{padding:28px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="wrap">
+  <div class="top">
+   <div><div class="logo">WAKH <span>SPORT</span></div>
+   <div class="tag">SPORTS PREDICTION SIMULATOR</div></div>
+   <div class="pill">● DEMO MODE</div>
+  </div>
+  <nav>
+   <button class="active" data-page="home">Bosh sahifa</button>
+   <button data-page="matches">Uchrashuvlar</button>
+   <button data-page="history">Tarix</button>
+   <button data-page="profile">Profil</button>
+  </nav>
+ </div>
+</header>
+<main>
+<section class="page active" id="home">
+ <div class="card hero">
+  <div class="badge">VIRTUAL SPORT</div>
+  <h1>Salom, <span class="green" id="greeting">WAKH</span>!</h1>
+  <p class="muted">Prognoz qil. Natijani simulyatsiya qil. Statistikangni kuzat.</p>
+  <div class="small">VIRTUAL BALANS</div>
+  <div class="balance" id="balance">1 000 000 UZS</div>
+  <div class="small">Bu haqiqiy pul emas, faqat o‘yin ballari.</div>
+ </div>
+ <div class="stats">
+  <div class="card stat"><span class="small">Jami prognoz</span><b id="total">0</b></div>
+  <div class="card stat"><span class="small">Yutuqli demo natija</span><b id="wins">0</b></div>
+ </div>
+ <div class="card">
+  <h2>⚽ Bugungi demo tanlov</h2>
+  <p class="muted">Namunaviy uchrashuvlarni ko‘rish uchun davom et.</p>
+  <button class="primary full" onclick="showPage('matches')">Uchrashuvlarni ko‘rish →</button>
+ </div>
+ <div class="card">
+  <h2>Oxirgi harakatlar</h2>
+  <div id="recent" class="small">Hali harakat yo‘q.</div>
+ </div>
+</section>
+
+<section class="page" id="matches">
+ <div class="card">
+  <h2>⚽ Futbol uchrashuvlari</h2>
+  <p class="small">Barcha jamoalar va koeffitsiyentlar demo uchun namunaviy.</p>
+ </div>
+ <div id="matchList"></div>
+ <div class="card">
+  <h2>🎯 Demo prognoz</h2>
+  <div class="small" id="chosen">Avval uchrashuv va natijani tanla.</div>
+  <label for="amount">Virtual ball miqdori (UZS)</label>
+  <input id="amount" type="number" min="1" max="1000000" step="1000" value="10000">
+  <button class="primary full" onclick="placeDemo()">Tasdiqlash</button>
+  <p class="small">Prognoz faqat virtual ballardan foydalanadi. Haqiqiy pul kiritish yoki yechish yo‘q.</p>
+  <div id="message" class="small" role="status"></div>
+ </div>
+ <div class="card">
+  <h2>Demo natijalarni simulyatsiya qilish</h2>
+  <p class="small">Kutilayotgan prognozlarga tasodifiy o‘yin natijasi beriladi. Bu haqiqiy uchrashuv natijasi emas.</p>
+  <button class="full" onclick="settleDemo()">Natijalarni simulyatsiya qilish</button>
+ </div>
+</section>
+
+<section class="page" id="history">
+ <div class="card">
+  <h2>📋 Prognozlar tarixi</h2>
+  <div id="historyList" class="small">Hali prognoz yo‘q.</div>
+ </div>
+ <div class="card">
+  <h2>Balans harakatlari</h2>
+  <div id="ledger" class="small">Hali harakat yo‘q.</div>
+ </div>
+</section>
+
+<section class="page" id="profile">
+ <div class="card">
+  <h2>👤 Profil</h2>
+  <label for="username">Ko‘rinadigan nom</label>
+  <input id="username" maxlength="24" placeholder="WAKH">
+  <button class="primary full" onclick="saveProfile()">Profilni saqlash</button>
+  <div class="small" id="profileMessage"></div>
+ </div>
+ <div class="card">
+  <h2>Statistika</h2>
+  <div class="item">Jami prognozlar: <b id="profileTotal">0</b></div>
+  <div class="item">Yakunlangan: <b id="settled">0</b></div>
+  <div class="item">Yutuqli: <b id="profileWins">0</b></div>
+ </div>
+ <div class="card">
+  <h2>Demo sozlamalari</h2>
+  <p class="small">Bu tugma virtual balansni boshlang‘ich qiymatga qaytaradi va mahalliy demo tarixini tozalaydi.</p>
+  <button onclick="resetDemo()">Demo ma’lumotlarini qayta tiklash</button>
+ </div>
+</section>
+</main>
+<footer>WAKH SPORT · Shaxsiy demo loyihasi · Haqiqiy pul ishlatilmaydi</footer>
+
+<script>
+const KEY="wakh_sport_demo_v1";
+const INITIAL=1000000;
+const games=[
+ {home:"Real Madrid",away:"Barcelona",odds:[2.10,3.20,2.40]},
+ {home:"Manchester City",away:"Arsenal",odds:[1.90,3.40,2.80]},
+ {home:"Liverpool",away:"Chelsea",odds:[1.85,3.50,3.00]},
+ {home:"PSG",away:"Inter",odds:[2.00,3.30,2.60]}
+];
+let state={balance:INITIAL,history:[],bets:[],ledger:[],name:"WAKH"};
+try{
+ const old=JSON.parse(localStorage.getItem(KEY)||"null");
+ if(old&&Number.isSafeInteger(old.balance)&&old.balance>=0)state.balance=old.balance;
+ if(old&&Array.isArray(old.history))state.history=old.history.slice(0,100);
+ if(old&&Array.isArray(old.bets))state.bets=old.bets.slice(0,100);
+ if(old&&Array.isArray(old.ledger))state.ledger=old.ledger.slice(0,100);
+ if(old&&typeof old.name==="string")state.name=old.name.slice(0,24);
+}catch(e){}
+let selected=null;
+const fmt=n=>Math.round(n).toLocaleString("ru-RU")+" UZS";
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function save(){
+ try{localStorage.setItem(KEY,JSON.stringify(state));}
+ catch(e){document.getElementById("message").textContent="Brauzer xotirasiga saqlash imkoni bo‘lmadi.";}
+}
+function showPage(id){
+ document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.id===id));
+ document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===id));
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));
+function renderMatches(){
+ document.getElementById("matchList").innerHTML=games.map((g,i)=>`
+ <div class="card">
+  <div class="row"><span class="badge">DEMO MATCH ${i+1}</span><span class="small">Namunaviy</span></div>
+  <div class="teams">${esc(g.home)}<br>${esc(g.away)}</div>
+  <div class="picks">${["1","X","2"].map((v,j)=>`
+   <button class="pick ${selected&&selected.i===i&&selected.j===j?"active":""}" onclick="choose(${i},${j})">
+   ${v}<br><b>${g.odds[j].toFixed(2)}</b></button>`).join("")}</div>
+ </div>`).join("");
+}
+function choose(i,j){
+ selected={i,j};
+ const g=games[i];
+ document.getElementById("chosen").textContent=g.home+" – "+g.away+" | "+["1 — birinchi jamoa","X — durang","2 — ikkinchi jamoa"][j]+" | demo koeffitsiyent "+g.odds[j].toFixed(2);
+ renderMatches();
+}
+function addLedger(text){state.ledger.unshift(new Date().toLocaleString("uz-UZ")+" · "+text);state.ledger=state.ledger.slice(0,100);}
+function placeDemo(){
+ if(!selected){alert("Avval uchrashuv va natijani tanla.");return;}
+ const amount=Number(document.getElementById("amount").value);
+ if(!Number.isSafeInteger(amount)||amount<1||amount>state.balance){alert("Virtual ball miqdorini tekshir.");return;}
+ const g=games[selected.i],pick=["1","X","2"][selected.j];
+ const bet={id:Date.now()+Math.random(),home:g.home,away:g.away,pick,amount,odds:g.odds[selected.j],status:"Kutilmoqda",payout:0};
+ state.balance-=amount;
+ state.bets.unshift(bet);state.bets=state.bets.slice(0,100);
+ state.history.unshift({text:g.home+" – "+g.away+": "+pick+" | "+fmt(amount)+" | kutilmoqda",time:Date.now()});
+ state.history=state.history.slice(0,100);
+ addLedger("Demo prognoz uchun −"+fmt(amount));
+ selected=null;
+ document.getElementById("chosen").textContent="Avval uchrashuv va natijani tanla.";
+ document.getElementById("message").textContent="Demo prognoz saqlandi.";
+ save();renderMatches();render();
+}
+function settleDemo(){
+ const pending=state.bets.filter(b=>b.status==="Kutilmoqda");
+ if(!pending.length){alert("Simulyatsiya qilish uchun kutilayotgan demo prognoz yo‘q.");return;}
+ pending.forEach(b=>{
+  const won=Math.random()<0.45;
+  if(won){b.status="Demo yutuq";b.payout=Math.floor(b.amount*b.odds);state.balance+=b.payout;addLedger("Demo yutuq +"+fmt(b.payout));}
+  else{b.status="Demo yutqazish";b.payout=0;addLedger("Demo prognoz yakunlandi: yutuq yo‘q");}
+  state.history.unshift({text:b.home+" – "+b.away+": "+b.status+" | "+fmt(b.amount),time:Date.now()});
+ });
+ state.history=state.history.slice(0,100);
+ save();render();
+ alert("Demo natijalar simulyatsiya qilindi.");
+}
+function render(){
+ document.getElementById("balance").textContent=fmt(state.balance);
+ document.getElementById("greeting").textContent=state.name;
+ document.getElementById("username").value=state.name;
+ const wins=state.bets.filter(b=>b.status==="Demo yutuq").length;
+ document.getElementById("total").textContent=state.bets.length;
+ document.getElementById("wins").textContent=wins;
+ document.getElementById("profileTotal").textContent=state.bets.length;
+ document.getElementById("profileWins").textContent=wins;
+ document.getElementById("settled").textContent=state.bets.filter(b=>b.status!=="Kutilmoqda").length;
+ document.getElementById("historyList").innerHTML=state.bets.length?state.bets.map(b=>`<div class="item"><b>${esc(b.home)} – ${esc(b.away)}</b><br>Tanlov: ${esc(b.pick)} · ${fmt(b.amount)}<br>Koeffitsiyent: ${b.odds.toFixed(2)} · <span class="green">${esc(b.status)}</span>${b.payout?`<br>Virtual qaytim: ${fmt(b.payout)}`:""}</div>`).join(""):state.history.map(h=>`<div class="item">${esc(typeof h==="string"?h:h.text||"Eski yozuv")}</div>`).join("")||"Hali prognoz yo‘q.";
+ document.getElementById("recent").innerHTML=state.history.length?state.history.slice(0,4).map(h=>`<div class="item">${esc(typeof h==="string"?h:h.text||"Demo harakati")}</div>`).join(""):"Hali harakat yo‘q.";
+ document.getElementById("ledger").innerHTML=state.ledger.length?state.ledger.map(esc).map(x=>`<div class="item">${x}</div>`).join(""):"Yangi harakatlar shu yerda ko‘rinadi.";
+}
+function saveProfile(){
+ const value=document.getElementById("username").value.trim().slice(0,24);
+ state.name=value||"WAKH";save();render();
+ document.getElementById("profileMessage").textContent="Profil saqlandi.";
+}
+function resetDemo(){
+ if(!confirm("Virtual balans va demo tarixini qayta tiklaysanmi?"))return;
+ state={balance:INITIAL,history:[],bets:[],ledger:[],name:state.name};
+ selected=null;save();renderMatches();render();
+ document.getElementById("message").textContent="";
+ document.getElementById("chosen").textContent="Avval uchrashuv va natijani tanla.";
+}
+renderMatches();render();
+</script>
+
+<section id="live-football" style="margin:20px 0;padding:18px;background:#101813;border:1px solid #20e66b;border-radius:16px;color:white;font-family:Arial,sans-serif">
+  <h2 style="color:#20e66b;margin-top:0">⚽ WAKH SPORT — FUTBOL</h2>
+  <p style="color:#aaa">O‘yin hisoblari va gollar statistikasi</p>
+
+  <div id="football-matches">
+    <p>Hozircha jonli hisob ma’lumoti ulanmagan.</p>
+  </div>
+
+  <button onclick="loadFootballMatches()" style="background:#20e66b;color:#061008;border:0;padding:12px 16px;border-radius:9px;font-weight:bold">
+    ↻ Hisoblarni yangilash
+  </button>
+  <p id="football-status" style="font-size:12px;color:#aaa">
+    Ma’lumot manbasi ulanishi kutilmoqda.
+  </p>
+</section>
+
+<script>
+async function loadFootballMatches() {
+  const status = document.getElementById("football-status");
+  status.textContent = "Haqiqiy hisoblar manbasi hali ulanmagan.";
+}
+</script>
+</body>
+</html>

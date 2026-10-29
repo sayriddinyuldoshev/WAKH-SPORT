@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WAKH SPORT — Hisoblar</title>
+<style>
+body{margin:0;background:#07100b;color:#f2fff5;font-family:Arial,sans-serif;padding:18px}
+h1{color:#20e66b}
+select,button{padding:12px;border-radius:9px;border:1px solid #20e66b;background:#101d14;color:white;margin:5px 0}
+.card{background:#101813;border:1px solid #244c31;border-radius:14px;padding:15px;margin:12px 0}
+.score{font-size:24px;font-weight:bold;color:#20e66b}
+.muted{color:#a9b8ad;font-size:13px}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+</style>
+</head>
+<body>
+<h1>⚽ WAKH SPORT</h1>
+<p>Futbol hisoblari va jami gollar statistikasi</p>
+
+<select id="league">
+<option value="uefa.champions">Chempionlar ligasi</option>
+<option value="esp.1">La Liga</option>
+<option value="eng.1">Premier League</option>
+<option value="ita.1">Serie A</option>
+<option value="ger.1">Bundesliga</option>
+<option value="fra.1">Ligue 1</option>
+</select>
+<br>
+<button id="refresh">↻ Hisoblarni yangilash</button>
+<p id="status" class="muted">Ma'lumotlar yuklanmoqda...</p>
+<div id="matches"></div>
+
+<script>
+const league=document.getElementById("league");
+const matches=document.getElementById("matches");
+const statusText=document.getElementById("status");
+
+function esc(s){
+  return String(s??"").replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",
+    '"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+async function loadScores(){
+  statusText.textContent="Hisoblar yuklanmoqda...";
+  matches.replaceChildren();
+
+  try{
+    const url="https://site.api.espn.com/apis/site/v2/sports/soccer/"
+      +encodeURIComponent(league.value)+"/scoreboard";
+    const response=await fetch(url, {signal: AbortSignal.timeout(12000)});
+    if(!response.ok) throw Error("HTTP "+response.status);
+
+    const data=await response.json();
+    const events=data.events||[];
+
+    if(!events.length){
+      statusText.textContent="Bu musobaqa uchun hozircha o‘yin topilmadi.";
+      return;
+    }
+
+    let count=0;
+    for(const event of events){
+      const comp=event.competitions?.[0];
+      const teams=comp?.competitors||[];
+      const home=teams.find(t=>t.homeAway==="home");
+      const away=teams.find(t=>t.homeAway==="away");
+      if(!home||!away) continue;
+
+      const hs=Number(home.score);
+      const as=Number(away.score);
+      const phase=event.status?.type?.state||"";
+      const isLive=phase==="in";
+      const isFinished=phase==="post";
+      const hasScore=(isLive||isFinished) &&
+                     home.score!==undefined && home.score!=="" &&
+                     away.score!==undefined && away.score!=="";
+      const total=hasScore && Number.isFinite(hs+as) ? hs+as : null;
+      const state=isFinished ? "YAKUNLANDI" :
+                  phase==="pre" ? (event.status?.type?.detail||"Boshlanishi kutilmoqda") :
+                  (event.status?.type?.detail||"Holat noma'lum");
+      const clock=event.status?.displayClock||"";
+      const startTime=event.date
+        ? new Date(event.date).toLocaleString("uz-UZ", {
+            day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit"
+          })
+        : (event.status?.type?.detail||"Vaqti noma'lum");
+      const matchStatus=isLive
+        ? "🔴 JONLI · "+(clock||"Vaqt aniqlanmoqda")
+        : phase==="pre"
+          ? "Boshlanishi: "+startTime
+          : state;
+      const card=document.createElement("article");
+      card.className="card";
+      card.innerHTML=`
+        <div class="muted">${esc(event.name||"Futbol uchrashuvi")}</div>
+        <div class="row">
+          <span>${esc(home.team?.displayName||"Uy jamoasi")}</span>
+          <span class="score">${hasScore?esc(home.score)+" - "+esc(away.score):"—"}</span>
+          <span>${esc(away.team?.displayName||"Mehmon jamoasi")}</span>
+        </div>
+        <p class="muted">${esc(matchStatus)}</p>
+        <p>Jami gollar: <b>${total===null?(phase==="pre"?"O‘yin boshlanmagan":"Hali mavjud emas"):total}</b></p>
+      `;
+      matches.appendChild(card);
+      count++;
+    }
+
+    statusText.textContent=count
+      ? "Ko‘rsatilgan uchrashuvlar: "+count+
+        ". Manba: ESPN. Oxirgi yangilanish: "+new Date().toLocaleTimeString()
+      : "Hozircha ko‘rsatish uchun uchrashuv yo‘q.";
+  }catch(error){
+    statusText.textContent=
+      "Hisoblarni olib bo‘lmadi. Internetni tekshirib, qayta urinib ko‘ring.";
+  }
+}
+
+document.getElementById("refresh").addEventListener("click",loadScores);
+league.addEventListener("change",loadScores);
+loadScores();
+setInterval(loadScores,60000);
+</script>
+</body>
+</html>

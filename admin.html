@@ -1,0 +1,180 @@
+
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WAKH SPORT — Admin</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#08111f;color:#eef5ff;font-family:Arial;padding:18px}
+main{max-width:950px;margin:auto}
+h1{color:#65e0a3}
+.panel{background:#111e30;border:1px solid #2b4059;border-radius:16px;padding:18px;margin:14px 0}
+input,button{padding:11px;border-radius:9px;font-size:15px;margin:5px 0}
+input{background:#08111f;color:white;border:1px solid #40536a;width:100%}
+button{border:0;background:#65e0a3;color:#07150f;font-weight:bold;cursor:pointer}
+.danger{background:#ffb5b5}
+.secondary{background:#263b55;color:white}
+.player{border:1px solid #30445d;padding:14px;border-radius:12px;margin:12px 0;overflow-wrap:anywhere}
+.small{color:#b9c9dc;font-size:14px}
+#notice{overflow-wrap:anywhere}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>WAKH SPORT / ADMIN</h1>
+<p class="small">Faqat ruxsat berilgan administrator uchun.</p>
+
+<section class="panel" id="loginBox">
+<h2>Admin kirishi</h2>
+<input id="email" type="email" placeholder="Admin email">
+<input id="password" type="password" placeholder="Parol">
+<button id="login">Kirish</button>
+<p id="notice" role="status"></p>
+</section>
+
+<section class="panel" id="dashboard" hidden>
+<h2>O‘yinchilar</h2>
+<p id="adminInfo" class="small"></p>
+<button id="refresh">Ro‘yxatni yangilash</button>
+<button id="logout" class="secondary">Chiqish</button>
+<div id="players"></div>
+</section>
+</main>
+
+<script type="module">
+import {initializeApp} from
+"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import {
+ getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {
+ getFirestore, collection, getDocs, doc, updateDoc
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+ apiKey: "AIzaSyBZ2pF_9PTtF2puakw612OtCvo1Ut-DLYs",
+ authDomain: "wakh-sport.firebaseapp.com",
+ projectId: "wakh-sport",
+ storageBucket: "wakh-sport.firebasestorage.app",
+ messagingSenderId: "18163044390",
+ appId: "1:18163044390:web:9bcb4ffdf3faddab93d6e7",
+ measurementId: "G-1MDTSRRJQ4"
+};
+
+// Firebase Console'dagi admin akkaunting UID'sini shu yerga yoz.
+const ADMIN_UID = "MZktu7Ep2yXfiBIVhVdpPPLX7L72";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const $ = id => document.getElementById(id);
+
+function notice(text) {
+ $("notice").textContent = text;
+}
+
+function showError(error) {
+ console.error(error);
+ notice("Xatolik: " + (error.code || error.message));
+}
+
+$("login").onclick = async () => {
+ try {
+  notice("Tekshirilmoqda...");
+  await signInWithEmailAndPassword(
+   auth, $("email").value.trim(), $("password").value
+  );
+ } catch (error) {
+  showError(error);
+ }
+};
+
+onAuthStateChanged(auth, async user => {
+ const allowed = !!user && user.uid === ADMIN_UID;
+ $("loginBox").hidden = allowed;
+ $("dashboard").hidden = !allowed;
+
+ if (user && !allowed) {
+  notice("Bu akkauntga admin ruxsati berilmagan.");
+  await signOut(auth);
+  return;
+ }
+ if (allowed) {
+  $("adminInfo").textContent = "Admin: " + user.email;
+  await loadPlayers();
+ }
+});
+
+async function loadPlayers() {
+ $("players").textContent = "Yuklanmoqda...";
+ try {
+  const snapshot = await getDocs(collection(db, "players"));
+  const root = $("players");
+  root.replaceChildren();
+
+  if (snapshot.empty) {
+   root.textContent = "Hozircha o‘yinchilar yo‘q.";
+   return;
+  }
+
+  snapshot.forEach(item => {
+   const p = item.data();
+   const card = document.createElement("article");
+   card.className = "player";
+
+   const title = document.createElement("h3");
+   title.textContent = p.name || "Ism kiritilmagan";
+   card.append(title);
+
+   const details = document.createElement("p");
+   details.className = "small";
+   details.textContent =
+    "ID: " + (p.playerId || "—") +
+    " | Email: " + (p.email || "—") +
+    " | Holat: " + (p.status || "—");
+   card.append(details);
+
+   const approve = document.createElement("button");
+   approve.textContent = "Tasdiqlash";
+   approve.onclick = () => changeStatus(item.id, "approved");
+   card.append(approve);
+
+   const block = document.createElement("button");
+   block.textContent = "Bloklash";
+   block.className = "danger";
+   block.onclick = () => changeStatus(item.id, "blocked");
+   card.append(block);
+
+   const pending = document.createElement("button");
+   pending.textContent = "Kutilmoqda";
+   pending.className = "secondary";
+   pending.onclick = () => changeStatus(item.id, "pending");
+   card.append(pending);
+
+   root.append(card);
+  });
+ } catch (error) {
+  $("players").textContent =
+   "Ro‘yxat yuklanmadi. Firebase Firestore Rules sozlamalarini tekshiring.";
+  console.error(error);
+ }
+}
+
+async function changeStatus(uid, status) {
+ try {
+  await updateDoc(doc(db, "players", uid), {status});
+  await loadPlayers();
+ } catch (error) {
+  alert("O‘zgartirish amalga oshmadi: " + error.message);
+ }
+}
+
+$("refresh").onclick = loadPlayers;
+$("logout").onclick = () => signOut(auth);
+</script>
+</body>
+</html>
+
